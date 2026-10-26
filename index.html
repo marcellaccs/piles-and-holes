@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Piles and Holes</title>
+<meta name="description" content="A sandbox story that introduces zero and negative numbers with piles and holes of sand.">
+<meta property="og:title" content="Piles and Holes">
+<meta property="og:description" content="A sandbox story that introduces zero and negative numbers with piles and holes of sand.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏖️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: one centered column; the sandbox stage is the hero, caption under it, controls below. */
+:root {
+  --bg: #f3f7f9;
+  --surface: #ffffff;
+  --fg: #23323a;
+  --muted: #5d6f78;
+  --line: #d6e1e6;
+  --accent: #2f7fb3;
+  --accent-ink: #ffffff;
+  --pile: #c98a2e;
+  --hole: #4a6f8a;
+  --display: "Fredoka", "Nunito", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141c21; --surface: #1d282e; --fg: #e8eff2; --muted: #9db0b9; --line: #2e3d45;
+    --accent: #6cb4e4; --accent-ink: #0d1a22; --pile: #e3ac57; --hole: #8fb4cf; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141c21; --surface: #1d282e; --fg: #e8eff2; --muted: #9db0b9; --line: #2e3d45;
+  --accent: #6cb4e4; --accent-ink: #0d1a22; --pile: #e3ac57; --hole: #8fb4cf; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 0px));
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(1.7rem, 4vw, 2.3rem); margin: 0; letter-spacing: 0.01em; }
+h1 .p { color: var(--pile); } h1 .h { color: var(--hole); }
+.modes { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 4px; }
+.modes button { border: 0; background: transparent; color: var(--muted); font: 700 1rem var(--display); padding: 8px 18px; border-radius: 999px; cursor: pointer; }
+.modes button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 18px; overflow: hidden; background: #cfe7f3; }
+.stage canvas { width: 100%; height: 100%; display: block; }
+.readout { position: absolute; top: 12px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; pointer-events: none; }
+.count { font: 700 clamp(0.95rem, 2.4vw, 1.2rem) var(--display); color: #2c3a40; background: rgba(255,255,255,0.78); padding: 4px 12px; border-radius: 999px; }
+.big { font: 700 clamp(2rem, 7vw, 3.6rem) var(--display); line-height: 1; color: #2c3a40; background: rgba(255,255,255,0.78); padding: 6px 16px 8px; border-radius: 16px; text-align: center; min-width: 2.2em; }
+.big small { display: block; font: 700 clamp(0.7rem, 1.8vw, 0.85rem) var(--body); color: #55666e; margin-top: 2px; }
+.numline { width: 100%; height: 76px; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.caption { font: 600 clamp(1.15rem, 3vw, 1.5rem) var(--display); line-height: 1.35; min-height: 3.2em; margin: 0; text-wrap: balance; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.row.between { justify-content: space-between; }
+.btn { font: 700 1.05rem var(--display); border-radius: 14px; padding: 10px 18px; cursor: pointer; border: 2px solid var(--line); background: var(--surface); color: var(--fg); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.pile { border-color: var(--pile); color: var(--pile); }
+.btn.hole { border-color: var(--hole); color: var(--hole); }
+.btn.big-go { font-size: 1.25rem; padding: 12px 26px; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.dots { display: flex; gap: 6px; }
+.dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.dots span.on { background: var(--accent); }
+.toggles { display: flex; flex-wrap: wrap; gap: 16px; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+.toggles label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--accent); }
+.note { color: var(--muted); font-size: 0.95rem; max-width: 65ch; margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1><span class="p">Piles</span> and <span class="h">Holes</span></h1>
+    <div class="modes" role="group" aria-label="Mode">
+      <button id="modeStory" aria-pressed="true">Story</button>
+      <button id="modePlay" aria-pressed="false">Play</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <canvas id="sand" aria-label="A sandbox with piles and holes"></canvas>
+    <div class="readout">
+      <div class="count" id="count">Flat sand</div>
+      <div class="big" id="big">0</div>
+    </div>
+  </div>
+
+  <canvas class="numline" id="numline" aria-label="Number line" hidden></canvas>
+
+  <p class="caption" id="caption" aria-live="polite"></p>
+
+  <div id="storyControls" class="row between">
+    <div class="row">
+      <button class="btn" id="back">Back</button>
+      <button class="btn" id="replay">Again</button>
+      <button class="btn primary big-go" id="next">Next</button>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <div id="playControls" class="row" hidden>
+    <button class="btn pile" id="addPile">+ Pile</button>
+    <button class="btn hole" id="addHole">+ Hole</button>
+    <button class="btn primary big-go" id="smoosh">Smoosh!</button>
+    <button class="btn" id="mystery">Mystery</button>
+    <button class="btn" id="clear">Flatten</button>
+  </div>
+
+  <div class="toggles">
+    <label><input type="checkbox" id="tLine"> Number line</label>
+    <label><input type="checkbox" id="tNeg"> Grown-up numbers (−1)</label>
+    <label><input type="checkbox" id="tSpeak"> Read aloud</label>
+    <label><input type="checkbox" id="tSlow"> Extra slow</label>
+  </div>
+
+  <p class="note">Tip: try it first with real sand or play-dough. Pour a pile, dig a hole, then push the pile into the hole. In Play, tap Mystery, guess what will be left, then tap Smoosh.</p>
+</div>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let SPEED = 2.2;
+  const $ = id => document.getElementById(id);
+  const cv = $('sand'), ctx = cv.getContext('2d');
+  const nl = $('numline'), nctx = nl.getContext('2d');
+
+  // ---------- state ----------
+  let items = [];          // {s: +1 pile | -1 hole, x, h, alive}
+  let particles = [];
+  let r = 0.06, rTarget = 0.06;
+  let marker = 0;
+  let showLine = false, showNeg = false, speak = false;
+  let token = 0;           // cancels running scene scripts
+  let busy = false;
+
+  const words = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+  const alive = () => items.filter(i => i.alive);
+  const counts = () => { const a = alive(); return { p: a.filter(i => i.s > 0).length, h: a.filter(i => i.s < 0).length }; };
+
+  // ---------- layout ----------
+  function targets() {
+    const a = alive();
+    const piles = a.filter(i => i.s > 0).sort((u, v) => u.x - v.x);
+    const holes = a.filter(i => i.s < 0).sort((u, v) => u.x - v.x);
+    const gap = piles.length && holes.length ? 1 : 0;
+    const n = piles.length + holes.length + gap;
+    const sp = Math.min(0.15, 0.84 / Math.max(n, 1));
+    rTarget = Math.min(0.068, sp * 0.46);
+    const map = new Map();
+    let k = 0;
+    const pos = i => 0.5 + (i - (n - 1) / 2) * sp;
+    piles.forEach(it => map.set(it, pos(k++)));
+    k += gap;
+    holes.forEach(it => map.set(it, pos(k++)));
+    return map;
+  }
+
+  const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  function tween(ms, fn) {
+    ms *= SPEED;
+    return new Promise(res => {
+      const t0 = performance.now();
+      const step = now => {
+        const t = Math.min(1, (now - t0) / ms);
+        fn(ease(t));
+        t < 1 ? requestAnimationFrame(step) : res();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  const wait = ms => new Promise(res => setTimeout(res, ms * SPEED));
+
+  function relayout(ms = 500) {
+    const map = targets();
+    const from = new Map([...map.keys()].map(it => [it, it.x]));
+    return tween(ms, t => map.forEach((tx, it) => { it.x = from.get(it) + (tx - from.get(it)) * t; }));
+  }
+
+  function setItems(p, h) {
+    items = [];
+    for (let i = 0; i < p; i++) items.push({ s: 1, x: 0.3, h: 1, alive: true });
+    for (let i = 0; i < h; i++) items.push({ s: -1, x: 0.7, h: 1, alive: true });
+    items.forEach((it, i) => it.x = 0.2 + i * 0.01);
+    const map = targets();
+    map.forEach((tx, it) => it.x = tx);
+    r = rTarget;
+    const c = counts(); marker = c.p - c.h;
+    updateReadout();
+  }
+
+  async function add(s) {
+    const it = { s, x: s > 0 ? 0 : 1, h: 0, alive: true };
+    items.push(it);
+    const map = targets();
+    it.x = map.get(it);
+    const lay = relayout(450);
+    const grow = tween(750, t => {
+      it.h = t;
+      const W = cv.width;
+      for (let k = 0; k < 3; k++) spawn(it.x, s);
+    });
+    updateReadout();
+    await Promise.all([lay, grow]);
+  }
+
+  async function smoosh(my) {
+    const piles = alive().filter(i => i.s > 0).sort((u, v) => v.x - u.x);
+    const holes = alive().filter(i => i.s < 0).sort((u, v) => u.x - v.x);
+    const n = Math.min(piles.length, holes.length);
+    for (let i = 0; i < n; i++) {
+      if (my !== token) return;
+      const p = piles[i], h = holes[i], x0 = p.x;
+      await tween(950, t => { p.x = x0 + (h.x - x0) * t; });
+      p.alive = false; h.alive = false;
+      items = items.filter(it => it.alive);
+      burst(h.x);
+      updateReadout();
+      await wait(250);
+    }
+    if (my !== token) return;
+    await relayout(550);
+    updateReadout();
+  }
+
+  // ---------- particles ----------
+  function spawn(x, s) {
+    if (reduce) return;
+    if (s > 0) particles.push({ x: x + (Math.random() - 0.5) * r * 0.6, y: 0.02, vx: (Math.random() - 0.5) * 0.0006, vy: 0.004 + Math.random() * 0.003, life: 1, fall: true });
+    else particles.push({ x: x + (Math.random() - 0.5) * r * 0.8, y: 0.56, vx: (Math.random() - 0.5) * 0.006, vy: -0.012 - Math.random() * 0.008, life: 1, fall: false });
+  }
+  function burst(x) {
+    if (reduce) return;
+    for (let k = 0; k < 18; k++) particles.push({ x, y: 0.55, vx: (Math.random() - 0.5) * 0.008, vy: -0.006 - Math.random() * 0.006, life: 0.7, fall: false });
+  }
+
+  // ---------- drawing ----------
+  let grains = [];
+  function makeGrains() {
+    grains = [];
+    for (let i = 0; i < 520; i++) grains.push({ x: Math.random(), y: 0.38 + Math.random() * 0.52, a: Math.random() });
+  }
+  makeGrains();
+
+  function bump(d) { const a = Math.abs(d); return a >= r ? 0 : Math.pow(Math.cos(Math.PI * a / (2 * r)), 2); }
+  function surfaceAt(x) {
+    let v = 0;
+    for (const it of items) v += it.s * it.h * bump(x - it.x);
+    return v;
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const b = cv.getBoundingClientRect();
+    cv.width = Math.round(b.width * dpr); cv.height = Math.round(b.height * dpr);
+    const nb = nl.getBoundingClientRect();
+    nl.width = Math.round(nb.width * dpr); nl.height = Math.round(nb.height * dpr);
+  }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    if (!W || !H) return;
+    r += (rTarget - r) * 0.15;
+    const base = H * 0.56, amp = H * 0.22, bottom = H * 0.9;
+    const bx0 = W * 0.04, bx1 = W * 0.96;
+    const X = f => bx0 + f * (bx1 - bx0);
+
+    // sky
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#bfe0f1'); sky.addColorStop(1, '#e9f5fb');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    // sun
+    ctx.fillStyle = '#ffe38a';
+    ctx.beginPath(); ctx.arc(W * 0.88, H * 0.12, H * 0.055, 0, Math.PI * 2); ctx.fill();
+
+    // surface samples
+    const N = 360, pts = [];
+    for (let i = 0; i <= N; i++) { const f = i / N; pts.push([X(f), base - amp * surfaceAt(f)]); }
+
+    // hole shadows (air inside a hole, below level)
+    ctx.fillStyle = 'rgba(92, 64, 34, 0.28)';
+    ctx.beginPath(); ctx.moveTo(pts[0][0], base);
+    for (const [x, y] of pts) ctx.lineTo(x, Math.max(y, base));
+    ctx.lineTo(pts[N][0], base); ctx.closePath(); ctx.fill();
+
+    // sand body
+    const sand = ctx.createLinearGradient(0, base - amp, 0, bottom);
+    sand.addColorStop(0, '#f2cf8d'); sand.addColorStop(0.4, '#e3b46a'); sand.addColorStop(1, '#c99347');
+    ctx.fillStyle = sand;
+    ctx.beginPath(); ctx.moveTo(pts[0][0], bottom);
+    for (const [x, y] of pts) ctx.lineTo(x, y);
+    ctx.lineTo(pts[N][0], bottom); ctx.closePath(); ctx.fill();
+
+    // grains
+    for (const g of grains) {
+      const y = base - amp * 1.1 + g.y * (bottom - base + amp * 1.1);
+      const sy = base - amp * surfaceAt(g.x);
+      if (y > sy + 3) {
+        ctx.fillStyle = g.a > 0.5 ? 'rgba(150,100,40,0.35)' : 'rgba(255,240,200,0.5)';
+        ctx.fillRect(X(g.x), y, Math.max(2, W * 0.0025), Math.max(2, W * 0.0025));
+      }
+    }
+
+    // rim highlight
+    ctx.strokeStyle = 'rgba(255, 244, 214, 0.9)'; ctx.lineWidth = Math.max(2, H * 0.006);
+    ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+
+    // level line
+    ctx.save();
+    ctx.setLineDash([H * 0.015, H * 0.015]);
+    ctx.strokeStyle = 'rgba(60, 40, 20, 0.35)'; ctx.lineWidth = Math.max(1.5, H * 0.003);
+    ctx.beginPath(); ctx.moveTo(bx0, base); ctx.lineTo(bx1, base); ctx.stroke();
+    ctx.restore();
+
+    // wooden box
+    ctx.fillStyle = '#9b6a3c';
+    ctx.fillRect(0, base - H * 0.02, bx0, H);
+    ctx.fillRect(bx1, base - H * 0.02, W - bx1, H);
+    ctx.fillRect(0, bottom, W, H - bottom);
+    ctx.fillStyle = '#b8804a';
+    ctx.fillRect(0, base - H * 0.02, bx0, H * 0.02);
+    ctx.fillRect(bx1, base - H * 0.02, W - bx1, H * 0.02);
+
+    // particles
+    ctx.fillStyle = '#d9a556';
+    particles = particles.filter(p => p.life > 0);
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy;
+      if (!p.fall) p.vy += 0.0009;
+      const sy = (base - amp * surfaceAt(p.x)) / H;
+      if (p.fall && p.y >= sy) p.life = 0;
+      p.life -= p.fall ? 0.004 : 0.025;
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.5));
+      const s = Math.max(2.5, W * 0.004);
+      ctx.fillRect(X(p.x), p.y * H, s, s);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawLine() {
+    if (nl.hidden) return;
+    const W = nl.width, H = nl.height; if (!W) return;
+    const cs = getComputedStyle(document.documentElement);
+    const fg = cs.getPropertyValue('--fg').trim(), mu = cs.getPropertyValue('--muted').trim();
+    const pile = cs.getPropertyValue('--pile').trim(), hole = cs.getPropertyValue('--hole').trim();
+    nctx.clearRect(0, 0, W, H);
+    const c = counts(); const target = c.p - c.h;
+    marker += (target - marker) * 0.12;
+    const lo = -6, hi = 6, x0 = W * 0.06, x1 = W * 0.94, y = H * 0.42;
+    const X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0);
+    nctx.lineWidth = Math.max(2, H * 0.03);
+    nctx.strokeStyle = hole; nctx.beginPath(); nctx.moveTo(x0, y); nctx.lineTo(X(0), y); nctx.stroke();
+    nctx.strokeStyle = pile; nctx.beginPath(); nctx.moveTo(X(0), y); nctx.lineTo(x1, y); nctx.stroke();
+    nctx.font = `700 ${Math.round(H * 0.22)}px Fredoka, Nunito, sans-serif`;
+    nctx.textAlign = 'center'; nctx.textBaseline = 'top';
+    for (let v = lo; v <= hi; v++) {
+      nctx.strokeStyle = mu; nctx.lineWidth = Math.max(1.5, H * 0.02);
+      nctx.beginPath(); nctx.moveTo(X(v), y - H * 0.08); nctx.lineTo(X(v), y + H * 0.08); nctx.stroke();
+      if (v < 0 && !showNeg) continue;
+      nctx.fillStyle = v === 0 ? fg : mu;
+      nctx.fillText(v < 0 ? '−' + (-v) : String(v), X(v), y + H * 0.14);
+    }
+    const m = Math.max(lo, Math.min(hi, marker));
+    nctx.fillStyle = fg;
+    nctx.beginPath(); nctx.moveTo(X(m), y - H * 0.06); nctx.lineTo(X(m) - H * 0.11, y - H * 0.3); nctx.lineTo(X(m) + H * 0.11, y - H * 0.3); nctx.closePath(); nctx.fill();
+    nctx.font = `700 ${Math.round(H * 0.17)}px Nunito, sans-serif`;
+    nctx.textBaseline = 'middle';
+    nctx.fillStyle = hole; nctx.textAlign = 'left'; nctx.fillText('holes', x0, H * 0.14);
+    nctx.fillStyle = pile; nctx.textAlign = 'right'; nctx.fillText('piles', x1, H * 0.14);
+  }
+
+  function loop() { draw(); drawLine(); requestAnimationFrame(loop); }
+
+  // ---------- readout ----------
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  function updateReadout() {
+    const { p, h } = counts();
+    const count = $('count'), big = $('big');
+    if (!p && !h) { count.textContent = 'Flat sand'; big.innerHTML = '0<small>zero</small>'; return; }
+    if (p && h) { count.textContent = `${plural(p, 'pile')} and ${plural(h, 'hole')}`; big.innerHTML = '?<small>smoosh to see</small>'; return; }
+    if (p) { count.textContent = plural(p, 'pile'); big.innerHTML = `${p}<small>${words[p] || ''}</small>`; return; }
+    count.textContent = plural(h, 'hole');
+    big.innerHTML = showNeg ? `−${h}<small>negative ${words[h] || ''}</small>` : `${plural(h, 'hole')}<small>&nbsp;</small>`;
+    if (!showNeg) big.style.fontSize = 'clamp(1.2rem, 4vw, 2rem)'; else big.style.fontSize = '';
+  }
+
+  function say(text) {
+    $('caption').textContent = text;
+    if (!speak) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text.replace('−1', 'negative one'));
+      u.rate = 0.9; u.pitch = 1.1;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  // ---------- story ----------
+  const scenes = [
+    async my => { setItems(0, 0); say('This is a sandbox. The sand is flat. Nothing is here. Flat sand is zero.'); },
+    async my => { setItems(0, 0); say('Pour a scoop of sand on top. Now there is a pile. One pile is 1.'); await wait(600); if (my === token) await add(1); },
+    async my => {
+      setItems(1, 0); say('More scoops make more piles. 2 piles. 3 piles. That is 3.');
+      await wait(700); if (my !== token) return; await add(1);
+      await wait(500); if (my !== token) return; await add(1);
+    },
+    async my => { setItems(0, 0); say('Now scoop sand OUT. That makes a hole. A hole is the opposite of a pile.'); await wait(700); if (my === token) await add(-1); },
+    async my => {
+      setItems(1, 1); say('One pile and one hole. Push the pile into the hole...');
+      await wait(1800); if (my !== token) return;
+      await smoosh(my); if (my !== token) return;
+      say('Flat again! One pile and one hole make zero.');
+    },
+    async my => {
+      setItems(3, 2); say('3 piles and 2 holes. What will be left? Let\'s fill the holes...');
+      await wait(2400); if (my !== token) return;
+      await smoosh(my); if (my !== token) return;
+      say('One pile is left over. That is 1!');
+    },
+    async my => {
+      setItems(1, 2); say('1 pile and 2 holes. Fill a hole with the pile...');
+      await wait(2200); if (my !== token) return;
+      await smoosh(my); if (my !== token) return;
+      setNeg(true);
+      say('One hole is left over. One hole has a grown-up name: negative one. We write it −1.');
+    },
+    async my => {
+      setNeg(true); setLine(true); setItems(0, 3);
+      say('Start with 3 holes. That is −3. Now pour in sand, one scoop at a time, and watch the arrow.');
+      await wait(2600);
+      for (let i = 0; i < 5; i++) {
+        if (my !== token) return;
+        await add(1); if (my !== token) return;
+        await wait(250); await smoosh(my); await wait(500);
+      }
+      if (my === token) say('Each scoop moves one step to the right. Holes live on the left of zero. Piles live on the right.');
+    },
+    async my => { setItems(0, 0); say('Your turn! Tap Play to make your own piles and holes.'); },
+  ];
+  let scene = 0;
+
+  function renderDots() {
+    $('dots').innerHTML = scenes.map((_, i) => `<span class="${i === scene ? 'on' : ''}"></span>`).join('');
+    $('back').disabled = scene === 0;
+    $('next').textContent = scene === scenes.length - 1 ? 'Play' : 'Next';
+  }
+  function runScene() {
+    const my = ++token;
+    particles = [];
+    if (scene < 6) setNeg(false);
+    if (scene < 7) setLine(false);
+    renderDots();
+    scenes[scene](my);
+  }
+
+  // ---------- toggles ----------
+  function setLine(v) { showLine = v; $('tLine').checked = v; nl.hidden = !v; resize(); }
+  function setNeg(v) { showNeg = v; $('tNeg').checked = v; updateReadout(); }
+  $('tLine').onchange = e => setLine(e.target.checked);
+  $('tSlow').onchange = e => { SPEED = e.target.checked ? 3.5 : 2.2; };
+  $('tNeg').onchange = e => setNeg(e.target.checked);
+  $('tSpeak').onchange = e => { speak = e.target.checked; if (speak) say($('caption').textContent); else try { speechSynthesis.cancel(); } catch (x) {} };
+
+  // ---------- modes ----------
+  function setMode(play) {
+    $('modeStory').setAttribute('aria-pressed', String(!play));
+    $('modePlay').setAttribute('aria-pressed', String(play));
+    $('storyControls').hidden = play;
+    $('playControls').hidden = !play;
+    if (play) {
+      ++token; setNeg(true); setLine(true); setItems(2, 3);
+      say('Add piles and holes. Then tap Smoosh to fill the holes.');
+      refreshPlay();
+    } else runScene();
+  }
+  $('modeStory').onclick = () => setMode(false);
+  $('modePlay').onclick = () => setMode(true);
+  $('next').onclick = () => { if (scene === scenes.length - 1) setMode(true); else { scene++; runScene(); } };
+  $('back').onclick = () => { if (scene > 0) { scene--; runScene(); } };
+  $('replay').onclick = runScene;
+
+  // ---------- play ----------
+  function refreshPlay() {
+    const { p, h } = counts();
+    $('addPile').disabled = busy || p >= 6;
+    $('addHole').disabled = busy || h >= 6;
+    $('smoosh').disabled = busy || !(p && h);
+    $('mystery').disabled = busy; $('clear').disabled = busy;
+  }
+  async function act(fn) {
+    if (busy) return; busy = true; refreshPlay();
+    try { await fn(); } finally { busy = false; refreshPlay(); }
+  }
+  $('addPile').onclick = () => act(() => add(1));
+  $('addHole').onclick = () => act(() => add(-1));
+  $('smoosh').onclick = () => act(async () => {
+    const my = token; await smoosh(my);
+    const { p, h } = counts();
+    say(!p && !h ? 'All flat! That is zero.' : p ? `${plural(p, 'pile')} left. That is ${p}.` : `${plural(h, 'hole')} left. That is −${h}.`);
+  });
+  $('mystery').onclick = () => act(async () => {
+    let p, h;
+    do { p = 1 + Math.floor(Math.random() * 5); h = 1 + Math.floor(Math.random() * 5); } while (p === h && Math.random() < 0.6);
+    setItems(p, h);
+    say(`${plural(p, 'pile')} and ${plural(h, 'hole')}. What will be left? Guess, then tap Smoosh.`);
+  });
+  $('clear').onclick = () => act(async () => { setItems(0, 0); say('Flat sand. Zero.'); });
+
+  // ---------- boot ----------
+  new ResizeObserver(resize).observe(cv);
+  resize();
+  setMode(false);
+  loop();
+})();
+</script>
+</body>
+</html>
